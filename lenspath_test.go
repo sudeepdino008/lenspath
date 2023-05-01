@@ -1,6 +1,7 @@
 package lenspath
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -43,15 +44,20 @@ func TestStructLensPath(t *testing.T) {
 }
 
 func TestMapLensPath(t *testing.T) {
-	data := map[string]interface{}{
+	tagsList := []map[string]any{
+		{"tag_h": "medium"},
+		{"tag_w": "heavy", "tag_h": "tall"},
+	}
+	data := map[string]any{
 		"name":   "chacha",
 		"region": "India",
-		"additional": map[string]interface{}{
+		"additional": map[string]any{
 			"birthmark": "cut on the left hand",
-			"addi": map[string]interface{}{
+			"addi": map[string]any{
 				"code":     "334532",
 				"landmark": "near the forest entry",
 			},
+			"tagsList": tagsList,
 		},
 	}
 
@@ -61,11 +67,20 @@ func TestMapLensPath(t *testing.T) {
 	// 2. nested map field getting
 	checkGetWithLensPath(t, data, []string{"additional", "birthmark"}, "cut on the left hand", false, false)
 
-	// 3. errors expected
+	// 3. get all array field
+	checkGetWithLensPath(t, data, []string{"additional", "tagsList", "*", "tag_h"}, []any{"medium", "tall"}, false, false)
+
+	// 4 get all array field (but not elements have the queried nested field)
+	checkGetWithLensPath(t, data, []string{"additional", "tagsList", "*", "tag_w"}, []any{}, false, true)
+
+	// 4. array field getting error
+	checkGetWithLensPath(t, data, []string{"additional", "tagsList", "not_found"}, []any{}, false, true)
+
+	// 5. errors expected
 	checkGetWithLensPath(t, data, []string{"additional", "addi", "code", "extra"}, "", false, true)
 }
 
-func checkGetWithLensPath(t *testing.T, structure interface{}, lens []string, expectedValue interface{}, createFail bool, getFail bool) {
+func checkGetWithLensPath(t *testing.T, structure any, lens []string, expectedValue any, createFail bool, getFail bool) {
 	lp, err := Create(lens)
 	switch {
 	case err != nil && !createFail:
@@ -91,6 +106,11 @@ func checkGetWithLensPath(t *testing.T, structure interface{}, lens []string, ex
 
 	case err == nil && getFail:
 		t.Errorf("Expected error, got %v", value)
+
+	case reflect.ValueOf(value).Kind() == reflect.Slice || reflect.ValueOf(value).Kind() == reflect.Array:
+		if !reflect.DeepEqual(value, expectedValue) {
+			t.Errorf("Expected %v, got %v", expectedValue, value)
+		}
 
 	case value != expectedValue:
 		t.Errorf("Expected %v, got %v", expectedValue, value)

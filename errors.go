@@ -9,11 +9,23 @@ func (e *EmptyLensPathErr) Error() string {
 }
 
 type InvalidLensPathErr struct {
-	index int
+	index   int
+	errType InvalidLensPathErrType
+}
+
+type InvalidLensPathErrType string
+
+const (
+	ArrayExpectedErr   InvalidLensPathErrType = "lenspath: expected array (*)"
+	LensPathStoppedErr                        = "lenspath: could not navigate further, end of structure reached"
+)
+
+func NewInvalidLensPathErr(index int, errType InvalidLensPathErrType) *InvalidLensPathErr {
+	return &InvalidLensPathErr{index, errType}
 }
 
 func (e *InvalidLensPathErr) Error() string {
-	return fmt.Sprintf("lenspath: could not navigate further, end of structure reached at index %d of lens", e.index)
+	return fmt.Sprintf("lenspath: %s; lens index: %d", e.errType, e.index)
 }
 
 func (e *InvalidLensPathErr) Is(err error) bool {
