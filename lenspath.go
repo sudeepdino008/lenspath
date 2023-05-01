@@ -24,22 +24,19 @@ func (lp *Lenspath) Get(value any) (any, error) {
 }
 
 func (lp *Lenspath) get(value any, view int) (any, error) {
-	switch {
-	case view == lp.len():
+	if view == lp.len() {
 		return value, nil
-
-	case value == nil:
+	} else if value == nil {
 		return nil, &InvalidLensPathErr{}
-
-	default:
-		return lp.redirect(value, view)
 	}
-}
 
-func (lp *Lenspath) redirect(value any, view int) (any, error) {
-	if v, ok := value.(map[string]any); ok {
-		return lp.getFromMap(v, view)
-	} else if reflect.TypeOf(value).Kind() == reflect.Slice || reflect.TypeOf(value).Kind() == reflect.Array {
+	kind := reflect.TypeOf(value).Kind()
+
+	switch kind {
+	case reflect.Map:
+		return lp.getFromMap(value.(map[string]any), view)
+
+	case reflect.Slice, reflect.Array:
 		if lp.path(view) == "*" {
 			arr := reflect.ValueOf(value)
 			slice := make([]interface{}, arr.Len())
@@ -50,16 +47,19 @@ func (lp *Lenspath) redirect(value any, view int) (any, error) {
 		} else {
 			return nil, NewInvalidLensPathErr(view, ArrayExpectedErr)
 		}
-	} else if reflect.TypeOf(value).Kind() == reflect.Struct {
+
+	case reflect.Struct:
 		nestv := reflect.ValueOf(value).FieldByName(lp.path(view))
 		if nestv.IsZero() {
 			return nil, NewInvalidLensPathErr(view, LensPathStoppedErr)
 		}
 
 		return lp.get(nestv.Interface(), view+1)
-	} else if reflect.TypeOf(value).Kind() == reflect.Ptr {
+
+	case reflect.Ptr:
 		return lp.get(reflect.ValueOf(value).Elem().Interface(), view)
-	} else {
+
+	default:
 		return nil, fmt.Errorf("TODO: unhandled case: %T", value)
 	}
 }
