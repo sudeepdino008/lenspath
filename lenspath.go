@@ -12,20 +12,6 @@ type Lenspath struct {
 	//assumeNil bool // if lenspath cannot be resolved, assume nil. Only for "get" operations
 }
 
-type EmptyLensPathErr struct{}
-
-func (e *EmptyLensPathErr) Error() string {
-	return "lenspath: must have at least one lens"
-}
-
-type InvalidLensPathErr struct {
-	index int
-}
-
-func (e *InvalidLensPathErr) Error() string {
-	return fmt.Sprintf("lenspath: could not navigate further, end of structure reached at %d", e.index)
-}
-
 func Create(lens []Lens) (*Lenspath, error) {
 	if len(lens) == 0 {
 		return nil, &EmptyLensPathErr{}
@@ -57,7 +43,7 @@ func (lp *Lenspath) redirect(value interface{}, view int) (interface{}, error) {
 		return nil, fmt.Errorf("TODO: unhandled array")
 	} else if reflect.TypeOf(value).Kind() == reflect.Struct {
 		nestv := reflect.ValueOf(value).FieldByName(lp.path(view))
-		if nestv == (reflect.Value{}) {
+		if nestv.IsZero() {
 			return nil, &InvalidLensPathErr{index: view}
 		}
 
