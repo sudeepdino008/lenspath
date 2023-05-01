@@ -23,7 +23,7 @@ type InvalidLensPathErr struct {
 }
 
 func (e *InvalidLensPathErr) Error() string {
-	return fmt.Sprintf("lenspath: could not navigate further, end of structure reached at {}", e.index)
+	return fmt.Sprintf("lenspath: could not navigate further, end of structure reached at %d", e.index)
 }
 
 func Create(lens []Lens) (*Lenspath, error) {
@@ -51,13 +51,19 @@ func (lp *Lenspath) get(value interface{}, view int) (interface{}, error) {
 }
 
 func (lp *Lenspath) redirect(value interface{}, view int) (interface{}, error) {
-	if v := value.(map[string]interface{}); v != nil {
+	if v, ok := value.(map[string]interface{}); ok {
 		return lp.getFromMap(v, view)
-	} else if v := value.([]interface{}); v != nil {
+	} else if _, ok := value.([]interface{}); ok {
 		return nil, fmt.Errorf("TODO: unhandled array")
 	} else if reflect.TypeOf(value).Kind() == reflect.Struct {
-		nestv := reflect.ValueOf(value).FieldByName(lp.path(view)).Interface()
-		return lp.get(nestv, view+1)
+		nestv := reflect.ValueOf(value).FieldByName(lp.path(view))
+		if nestv == (reflect.Value{}) {
+			return nil, &InvalidLensPathErr{index: view}
+		}
+
+		return lp.get(nestv.Interface(), view+1)
+	} else if reflect.TypeOf(value).Kind() == reflect.Ptr {
+		return lp.get(reflect.ValueOf(value).Elem().Interface(), view)
 	} else {
 		return nil, fmt.Errorf("TODO: unhandled case: %T", value)
 	}
