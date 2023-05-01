@@ -1,8 +1,7 @@
 # lenspath
 
-`lenspath` used to create a deep lens, which is a specialized function that can both retrieve and update properties in deeply nested objects. The lensPath function takes an array of property names and returns a lens that focuses on the value at that path.
+`lenspath` is a Golang package for traversing and updating nested data structures, such as maps, slices, structs and arrays. It uses the functional concept of lenses to compose functions that manipulate specific parts of these structures while leaving the rest unchanged. With Lenspath, you can create lenses that focus on nested fields, specific indices of a slice or array, or a range of indices, and combine them to create more complex lenses. The package provides an API for using and combining lenses, making it a useful tool for working with complex, nested data.
 
-You can then set or view the lenspath value.
 
 ```golang
 
@@ -46,3 +45,4 @@ fmt.Println(user.address.house);     // "5A-1001"
 - [x] lenspath for arrays
 - [ ] option to assume nil for exhausted lens path
 - [ ] option to be able to get/set values for unexported struct fields 
+- [ ] ways to combine lenses
