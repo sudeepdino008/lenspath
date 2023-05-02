@@ -16,7 +16,7 @@ type TestStructNested struct {
 	Addi *TestStructNested
 }
 
-func TestStructLensPath(t *testing.T) {
+func TestStructGet(t *testing.T) {
 	// 1. top level struct field getting
 	checkGetWithLensPath(t, TestStruct{Name: "test"}, []string{"Name"}, "test", false, false, false)
 
@@ -45,7 +45,7 @@ func TestStructLensPath(t *testing.T) {
 	checkGetWithLensPath(t, ts, []string{"Additional", "Addi", "Addi", "Addi", "Code"}, nil, false, false, true)
 }
 
-func TestMapLensPath(t *testing.T) {
+func TestMapGet(t *testing.T) {
 	tagsList := []map[string]any{
 		{"tag_h": "medium"},
 		{"tag_w": "heavy", "tag_h": "tall"},
@@ -55,7 +55,7 @@ func TestMapLensPath(t *testing.T) {
 		"region": "India",
 		"additional": map[string]any{
 			"birthmark": "cut on the left hand",
-			"addi": map[string]any{
+			"addi": map[string]string{
 				"code":     "334532",
 				"landmark": "near the forest entry",
 			},
@@ -70,12 +70,14 @@ func TestMapLensPath(t *testing.T) {
 	checkGetWithLensPath(t, data, []string{"additional", "birthmark"}, "cut on the left hand", false, false, false)
 
 	// 3. get all array field
-	checkGetWithLensPath(t, data, []string{"additional", "tagsList", "*", "tag_h"}, []any{"medium", "tall"}, false, false, false)
+	checkGetWithLensPath(t, data, []string{"additional", "tagsList", "*", "tag_h"}, []string{"medium", "tall"}, false, false, false)
 
 	// 4 get all array field (but not elements have the queried nested field)
-	checkGetWithLensPath(t, data, []string{"additional", "tagsList", "*", "tag_w"}, []any{}, false, true, false)
+	checkGetWithLensPath(t, data, []string{"additional", "tagsList", "*", "tag_w"}, []string{}, false, true, false)
 	// 4.1 with assumeNil
-	checkGetWithLensPath(t, data, []string{"additional", "tagsList", "*", "tag_w"}, []any{nil, "heavy"}, false, false, true)
+	// TODO: * lens should use closures over set methods; otherwise "absent" values will be attempted to set to nil
+	// which is something that cannot be set to "string" type here.
+	checkGetWithLensPath(t, data, []string{"additional", "tagsList", "*", "tag_w"}, []string{"", "heavy"}, false, false, true)
 
 	// 4. array field getting error
 	checkGetWithLensPath(t, data, []string{"additional", "tagsList", "not_found"}, nil, false, true, false)
@@ -86,6 +88,77 @@ func TestMapLensPath(t *testing.T) {
 	checkGetWithLensPath(t, data, []string{"additional", "addi", "code", "extra"}, nil, false, true, true)
 
 	checkGetWithLensPath(t, data, []string{"additional", "addi", "nonexisting", "extra"}, nil, false, false, true)
+}
+
+func TestMapSet(t *testing.T) {
+	data := getTestMap()
+	checkSetWithLensPath(t, data, []string{"name"}, "chacha_new")
+
+	checkSetWithLensPath(t, data, []string{"additional", "birthmark"}, "2.cut on the right hand")
+
+	checkSetWithLensPath(t, data, []string{"additional", "addi", "code"}, "334532_new")
+
+	checkSetWithLensPath(t, data, []string{"additional", "tagsList", "*", "tag_h"}, []string{"too heavy", "too light"})
+}
+
+func TestMapSet2(t *testing.T) {
+	data := getTestMap2()
+
+	checkSetWithLensPath(t, data, []string{"name"}, "chacha_new")
+}
+
+func getTestMap() map[string]any {
+	tagsList := []map[string]string{
+		{"tag_h": "medium"},
+		{"tag_w": "heavy", "tag_h": "tall"},
+	}
+	data := map[string]any{
+		"name":   "chacha",
+		"region": "India",
+		"additional": map[string]any{
+			"birthmark": "cut on the left hand",
+			"addi": map[string]string{
+				"code":     "334532",
+				"landmark": "near the forest entry",
+			},
+			"tagsList":  tagsList,
+			"tagsList2": tagsList,
+		},
+	}
+
+	return data
+}
+
+func getTestMap2() map[string]string {
+	return map[string]string{
+		"name":   "chacha",
+		"region": "himalayas",
+	}
+}
+
+func checkSetWithLensPath(t *testing.T, structure any, lens []string, expectedValue any) {
+	lp, err := Create(lens)
+	if err != nil {
+		t.Errorf("create: Expected no error, got %v", err)
+		return
+	}
+
+	_, err = lp.Set(structure, expectedValue)
+	if err != nil {
+		t.Errorf("set: Expected no error, got %v", err)
+		return
+	}
+
+	new_value, err := lp.Get(structure)
+	if err != nil {
+		t.Errorf("og_get: Expected no error, got %v", err)
+		return
+	}
+
+	if !reflect.DeepEqual(new_value, expectedValue) {
+		t.Errorf("compare: Expected %v, got %v", expectedValue, new_value)
+		return
+	}
 }
 
 func checkGetWithLensPath(t *testing.T, structure any, lens []string, expectedValue any, createFail bool, getFail bool, assumeNil bool) {

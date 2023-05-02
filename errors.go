@@ -16,8 +16,9 @@ type InvalidLensPathErr struct {
 type InvalidLensPathErrType string
 
 const (
-	ArrayExpectedErr   InvalidLensPathErrType = "lenspath: expected array (*)"
-	LensPathStoppedErr                        = "lenspath: could not navigate further, end of structure reached"
+	ArrayExpectedErr   InvalidLensPathErrType = "expected array (*)"
+	LensPathStoppedErr                        = "could not navigate further, end of structure reached"
+	CannotSetFieldErr                         = "cannot set field"
 )
 
 func NewInvalidLensPathErr(index int, errType InvalidLensPathErrType) *InvalidLensPathErr {
@@ -31,4 +32,15 @@ func (e *InvalidLensPathErr) Error() string {
 func (e *InvalidLensPathErr) Is(err error) bool {
 	_, ok := err.(*InvalidLensPathErr)
 	return ok
+}
+
+type InvalidSetParamErr string
+
+const (
+	ArrayParamExpectedErr InvalidSetParamErr = "expected array for set value"
+	ParamSizeMismatchErr  InvalidSetParamErr = "array param and structure field array length should match"
+)
+
+func (e InvalidSetParamErr) Error() string {
+	return fmt.Sprintf("lenspath: %s", string(e))
 }
