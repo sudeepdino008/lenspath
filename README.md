@@ -43,6 +43,7 @@ fmt.Println(user.address.house);     // "5A-1001"
 - [x] add logic to get/set lenspath for structs
 - [x] lenspath for maps (and tests)
 - [x] lenspath for arrays
-- [ ] option to assume nil for exhausted lens path
+- [x] option to assume nil for exhausted lens path
 - [ ] option to be able to get/set values for unexported struct fields 
 - [ ] ways to combine lenses
+- [ ] document and give examples for various features

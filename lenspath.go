@@ -8,15 +8,15 @@ import (
 type Lens = string
 
 type Lenspath struct {
-	lens []Lens
-	//assumeNil bool // if lenspath cannot be resolved, assume nil. Only for "get" operations
+	lens      []Lens
+	assumeNil bool // if lenspath cannot be resolved, assume nil. Only for "get" operations
 }
 
 func Create(lens []Lens) (*Lenspath, error) {
 	if len(lens) == 0 {
 		return nil, &EmptyLensPathErr{}
 	}
-	return &Lenspath{lens: lens}, nil
+	return &Lenspath{lens: lens, assumeNil: true}, nil
 }
 
 func (lp *Lenspath) Get(value any) (any, error) {
@@ -27,7 +27,11 @@ func (lp *Lenspath) get(value any, view int) (any, error) {
 	if view == lp.len() {
 		return value, nil
 	} else if value == nil {
-		return nil, &InvalidLensPathErr{}
+		if lp.assumeNil {
+			return nil, nil
+		} else {
+			return nil, NewInvalidLensPathErr(view, LensPathStoppedErr)
+		}
 	}
 
 	kind := reflect.TypeOf(value).Kind()
@@ -51,7 +55,11 @@ func (lp *Lenspath) get(value any, view int) (any, error) {
 	case reflect.Struct:
 		nestv := reflect.ValueOf(value).FieldByName(lp.path(view))
 		if nestv.IsZero() {
-			return nil, NewInvalidLensPathErr(view, LensPathStoppedErr)
+			if lp.assumeNil {
+				return nil, nil
+			} else {
+				return nil, NewInvalidLensPathErr(view, LensPathStoppedErr)
+			}
 		}
 
 		return lp.get(nestv.Interface(), view+1)
@@ -60,7 +68,7 @@ func (lp *Lenspath) get(value any, view int) (any, error) {
 		return lp.get(reflect.ValueOf(value).Elem().Interface(), view)
 
 	default:
-		return nil, fmt.Errorf("TODO: unhandled case: %T", value)
+		return nil, fmt.Errorf("unhandled case: %T", value)
 	}
 }
 
@@ -79,7 +87,11 @@ func (lp *Lenspath) getAllFromList(value []any, view int) ([]any, error) {
 
 func (lp *Lenspath) getFromMap(value map[string]any, view int) (any, error) {
 	if mpv, ok := value[string(lp.lens[view])]; !ok {
-		return nil, NewInvalidLensPathErr(view, LensPathStoppedErr)
+		if lp.assumeNil {
+			return nil, nil
+		} else {
+			return nil, NewInvalidLensPathErr(view, LensPathStoppedErr)
+		}
 	} else if val, err := lp.get(mpv, view+1); err != nil {
 		return nil, err
 	} else {
