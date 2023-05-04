@@ -52,6 +52,9 @@ func (lp *Lenspath) get(data any, view int) (any, error) {
 			// else if array is homogeneous, return []<type> (e.g. []string)
 
 			arr := reflect.ValueOf(data)
+			if arr.Len() == 0 {
+				return nil, nil
+			}
 			any_slice := make([]any, 0, arr.Len())
 			consistent_type := true
 			var prev_type reflect.Type
@@ -69,7 +72,7 @@ func (lp *Lenspath) get(data any, view int) (any, error) {
 				}
 			}
 
-			if consistent_type {
+			if consistent_type && prev_type != nil {
 				slice := reflect.MakeSlice(reflect.SliceOf(prev_type), 0, arr.Len())
 				for _, v := range any_slice {
 					slice = reflect.Append(slice, reflect.ValueOf(v))
