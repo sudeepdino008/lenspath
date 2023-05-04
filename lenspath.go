@@ -47,20 +47,38 @@ func (lp *Lenspath) get(data any, view int) (any, error) {
 	case reflect.Slice, reflect.Array:
 		if lp.path(view) == "*" {
 
+			// return []any if the array is not homogeneous (some lens gets return nil for example
+			// or the map entries have different types for same keys)
+			// else if array is homogeneous, return []<type> (e.g. []string)
+
 			arr := reflect.ValueOf(data)
-			slice := reflect.Value{}
+			any_slice := make([]any, 0, arr.Len())
+			consistent_type := true
+			var prev_type reflect.Type
+
 			for j := 0; j < arr.Len(); j++ {
-				if v, err := lp.get(arr.Index(j).Interface(), view+1); err == nil {
-					if j == 0 {
-						slice = reflect.MakeSlice(reflect.SliceOf(reflect.TypeOf(v)), 0, arr.Len())
+				if value, err := lp.get(arr.Index(j).Interface(), view+1); err == nil {
+					value_type := reflect.TypeOf(value)
+					any_slice = append(any_slice, value)
+					if j > 0 {
+						consistent_type = consistent_type && value_type == prev_type
 					}
-					slice = reflect.Append(slice, reflect.ValueOf(v))
+					prev_type = value_type
 				} else {
 					return nil, err
 				}
 			}
 
-			return slice.Interface(), nil
+			if consistent_type {
+				slice := reflect.MakeSlice(reflect.SliceOf(prev_type), 0, arr.Len())
+				for _, v := range any_slice {
+					slice = reflect.Append(slice, reflect.ValueOf(v))
+				}
+
+				return slice.Interface(), nil
+			}
+
+			return any_slice, nil
 		} else {
 			return nil, NewInvalidLensPathErr(view, ArrayExpectedErr)
 		}
@@ -114,7 +132,6 @@ func (lp *Lenspath) set(data any, value any, view int) (any, error) {
 			arr := reflect.ValueOf(data)
 			fmt.Println(arr)
 			slice := reflect.MakeSlice(arr.Type(), 0, arr.Len())
-			//			slice := make([]any, arr.Len())
 
 			// check if value is a slice or array; the length should then match
 			// each value in the array is set to the corresponding value in the data slice
@@ -133,10 +150,6 @@ func (lp *Lenspath) set(data any, value any, view int) (any, error) {
 				} else {
 					return nil, err
 				}
-				//slice = reflect.Append(slice, value_arr.Index(j))
-				//slice[j] = arr.Index(j)
-				// slice[j] = arr.Index(j).Interface()
-				// lp.set(slice[j], value_arr.Index(j).Interface(), view+1)
 			}
 			return slice.Interface(), nil
 		} else {
@@ -175,20 +188,23 @@ func (lp *Lenspath) setFromMap(data any, value any, view int) (any, error) {
 	key := reflect.ValueOf((lp.lens[view]))
 	keyv := reflect.ValueOf(data).MapIndex(key)
 
+	tosetv := value
 	if !keyv.IsValid() || keyv.IsZero() {
-		if lp.assumeNil {
-			return nil, nil
+		if view == lp.len()-1 {
+			if !lp.assumeNil {
+				return nil, NewInvalidLensPathErr(view, LensPathStoppedErr)
+			}
 		} else {
 			return nil, NewInvalidLensPathErr(view, LensPathStoppedErr)
 		}
-	}
-
-	if val, err := lp.set(keyv.Interface(), value, view+1); err != nil {
+	} else if val, err := lp.set(keyv.Interface(), value, view+1); err != nil {
 		return nil, err
 	} else {
-		reflect.ValueOf(data).SetMapIndex(key, reflect.ValueOf(val))
-		return data, nil
+		tosetv = val
 	}
+
+	reflect.ValueOf(data).SetMapIndex(key, reflect.ValueOf(tosetv))
+	return data, nil
 }
 
 func (lp *Lenspath) getFromMap(value any, view int) (any, error) {

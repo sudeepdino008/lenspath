@@ -16,9 +16,11 @@ type InvalidLensPathErr struct {
 type InvalidLensPathErrType string
 
 const (
-	ArrayExpectedErr   InvalidLensPathErrType = "expected array (*)"
-	LensPathStoppedErr                        = "could not navigate further, end of structure reached"
-	CannotSetFieldErr                         = "cannot set field"
+	ArrayExpectedErr         InvalidLensPathErrType = "expected array (*)"
+	LensPathStoppedErr                              = "could not navigate further, end of structure reached"
+	CannotSetFieldErr                               = "cannot set field"
+	PathContainsArrErr                              = "path contains *; use GetList() instead"
+	PathDoesntContainsArrErr                        = "path does not contain *; use Get() instead"
 )
 
 func NewInvalidLensPathErr(index int, errType InvalidLensPathErrType) *InvalidLensPathErr {

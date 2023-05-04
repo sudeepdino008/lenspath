@@ -48,3 +48,5 @@ fmt.Println(user.address.house);     // "5A-1001"
 - [ ] option to be able to get/set values for unexported struct fields 
 - [ ] ways to combine lenses
 - [ ] document and give examples for various features
+- [ ] test error scenarios (proper error types must be returned)
+- [ ] add ci for running unit tests
