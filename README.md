@@ -5,48 +5,37 @@
 
 ```golang
 
-type User struct {
-    name string
-    address *Address
+
+data := map[string]any{
+		"name":   "chacha",
+		"region": "India",
+		"additional": map[string]any{
+			"birthmark": "cut on the left hand",
+			"addi": map[string]string{
+				"code":     "334532",
+				"landmark": "near the forest entry",
+			},
+        }
 }
 
-type Address struct {
-    house string
-    street string
-    area string
-    city string
-    country string
-}
+codeLp = Lenspath(["additional", "addi", "code"])
+fmt.Println(housePath.Get(data));    // "334532"
 
-user := User {
-    name: "Sudeep",
-    address: &Address {
-        house: "124",
-        street: "street 1",
-        area: "Mango",
-        city: "Jamshedpur",
-        country: "India",
-    }
-}
-
-housePath = Lenspath(["address", "house"])
-fmt.Println(housePath.Get(user));    // "124"
-
-housePath.Set(user, "5A-1001");
-fmt.Println(housePath.Get(user));    // "5A-1001"
-fmt.Println(user.address.house);     // "5A-1001"
-
+codeLp.Set(data, "5A-1001");
+fmt.Println(housePath.Get(data));    // "5A-1001"
 ```
 
+
+NOTE: it works well with maps and arrays. Setting on structs is problematic as reflection required fields to be "settable". That will come soon.
 
 # Further
 - [x] add logic to get lenspath for structs
 - [x] lenspath for maps (and tests)
 - [x] lenspath for arrays
 - [x] option to assume nil for exhausted lens path
-- [ ] add set capability to lenspath
+- [x] add set capability to lenspath
 - [ ] option to be able to get/set values for unexported struct fields 
-- [ ] ways to combine lenses
+- [x] ways to combine lenses
 - [ ] document and give examples for various features
 - [ ] test error scenarios (proper error types must be returned)
 - [ ] add ci for running unit tests
