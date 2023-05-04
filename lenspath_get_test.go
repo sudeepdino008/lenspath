@@ -98,6 +98,7 @@ func getTestMap() map[string]any {
 				{"tag_w": "heavy", "tag_h": "tall", "tag_n": map[string]any{"tag_n_2": "2-string", "tag_n_3": "3.0-string"}},
 			},
 			"tagsList3": "hello world",
+			"tagsList4": []string{"hello", "world", "hw"},
 		},
 	}
 

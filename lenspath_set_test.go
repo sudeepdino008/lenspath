@@ -46,4 +46,20 @@ func TestMapSet_complex(t *testing.T) {
 	checkSetWithLensPath(t, data, []string{"additional", "tagsList3"}, struct {
 		Tag_h string
 	}{Tag_h: "too heavy"}, false)
+
+	// set to nil
+	checkSetWithLensPath(t, data, []string{"additional", "tagsList3"}, nil, false)
+}
+
+func TestMapSet_array(t *testing.T) {
+	data := getTestMap()
+
+	// set array to array of diff size
+	checkSetWithLensPath(t, data, []string{"additional", "tagsList4"}, []string{"a", "b", "c", "d"}, false)
+
+	// size mismatch error
+	checkSetWithLensPath(t, data, []string{"additional", "tagsList2", "*", "tag_h"}, []string{"tag_h1", "tag_h2", "tag_h3"}, true)
+
+	// correct size
+	checkSetWithLensPath(t, data, []string{"additional", "tagsList2", "*", "tag_h"}, []string{"tag_h1", "tag_h2"}, false)
 }
