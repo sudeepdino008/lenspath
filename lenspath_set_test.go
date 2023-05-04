@@ -29,3 +29,21 @@ func TestMapSet_internal(t *testing.T) {
 
 	checkSetWithLensPath(t, data, []string{"additional", "tagsList2", "*", "tag_n", "tag_n_1"}, []string{"tag_n_new", "tag_n_new2"}, false)
 }
+
+func TestMapSet_complex(t *testing.T) {
+	data := getTestMap()
+
+	// setting to array
+	checkSetWithLensPath(t, data, []string{"additional", "tagsList3"}, []string{"too heavy", "too light"}, false)
+
+	// []any
+	checkSetWithLensPath(t, data, []string{"additional", "tagsList3"}, []any{nil, "too light"}, false)
+
+	// setting to map
+	checkSetWithLensPath(t, data, []string{"additional", "tagsList3"}, map[string]string{"tag_h": "too heavy", "tag_w": "too light"}, false)
+
+	// // setting to struct
+	checkSetWithLensPath(t, data, []string{"additional", "tagsList3"}, struct {
+		Tag_h string
+	}{Tag_h: "too heavy"}, false)
+}

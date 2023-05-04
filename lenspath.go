@@ -9,7 +9,7 @@ type Lens = string
 
 type Lenspath struct {
 	lens      []Lens
-	assumeNil bool // if lenspath cannot be resolved, assume nil. Only for "get" operations
+	assumeNil bool // if lenspath cannot be resolved, assume nil. If false, return error on unresolved lenspath while traversing structures
 }
 
 func Create(lens []Lens) (*Lenspath, error) {
@@ -105,20 +105,7 @@ func (lp *Lenspath) get(data any, view int) (any, error) {
 
 func (lp *Lenspath) set(data any, value any, view int) (any, error) {
 	if view == lp.len() {
-		kind := reflect.TypeOf(data).Kind()
-
-		switch kind {
-		case reflect.Slice, reflect.Array:
-			vkind := reflect.TypeOf(value).Kind()
-			if vkind == reflect.Slice || vkind == reflect.Array {
-				return value, nil
-			} else {
-				return nil, NewInvalidLensPathErr(view, ArrayExpectedErr)
-			}
-
-		default:
-			return value, nil
-		}
+		return value, nil
 	}
 
 	kind := reflect.TypeOf(data).Kind()
@@ -190,11 +177,7 @@ func (lp *Lenspath) setFromMap(data any, value any, view int) (any, error) {
 
 	tosetv := value
 	if !keyv.IsValid() || keyv.IsZero() {
-		if view == lp.len()-1 {
-			if !lp.assumeNil {
-				return nil, NewInvalidLensPathErr(view, LensPathStoppedErr)
-			}
-		} else {
+		if view < lp.len()-1 {
 			return nil, NewInvalidLensPathErr(view, LensPathStoppedErr)
 		}
 	} else if val, err := lp.set(keyv.Interface(), value, view+1); err != nil {
