@@ -39,7 +39,7 @@ NOTE: it works well with maps and arrays. Setting on structs is problematic as r
 - [ ] document and give examples for various features
 - [ ] test error scenarios (proper error types must be returned)
 - [ ] add ci for running unit tests
-
+- [ ] remove assume nil  
 
 
 ## Problem
