@@ -8,15 +8,23 @@ import (
 type Lens = string
 
 type Lenspath struct {
-	lens      []Lens
-	assumeNil bool // if lenspath cannot be resolved, assume nil. If false, return error on unresolved lenspath while traversing structures
+	lens         []Lens
+	lastArrayPos int  // last position of array (*) lens in lenspath
+	assumeNil    bool // if lenspath cannot be resolved, assume nil. If false, return error on unresolved lenspath while traversing structures
 }
 
 func Create(lens []Lens) (*Lenspath, error) {
 	if len(lens) == 0 {
 		return nil, &EmptyLensPathErr{}
 	}
-	return &Lenspath{lens: lens, assumeNil: true}, nil
+	lastArrPos := -1
+	for i, lensv := range lens {
+		if lensv == "*" {
+			lastArrPos = i
+		}
+	}
+	assumeNil := true // default to assume nil
+	return &Lenspath{lens, lastArrPos, assumeNil}, nil
 }
 
 func (lp *Lenspath) Get(data any) (any, error) {
@@ -72,6 +80,27 @@ func (lp *Lenspath) get(data any, view int) (any, error) {
 				}
 			}
 
+			if view != lp.lastArrayPos {
+				// need to unwrap or flatten the any_slice
+				consistent_type = true
+
+				flattened_slice := make([]any, 0)
+				for i, value := range any_slice {
+					arrv := reflect.ValueOf(value)
+					for j := 0; j < arrv.Len(); j++ {
+						arrv_val := arrv.Index(j).Interface()
+						arrv_type := reflect.TypeOf(arrv_val)
+						flattened_slice = append(flattened_slice, arrv_val)
+						if i > 0 || j > 0 {
+							consistent_type = consistent_type && arrv_type == prev_type
+						}
+						prev_type = arrv_type
+					}
+				}
+
+				any_slice = flattened_slice
+			}
+
 			if consistent_type && prev_type != nil {
 				slice := reflect.MakeSlice(reflect.SliceOf(prev_type), 0, arr.Len())
 				for _, v := range any_slice {
@@ -120,7 +149,6 @@ func (lp *Lenspath) set(data any, value any, view int) (any, error) {
 	case reflect.Slice, reflect.Array:
 		if lp.path(view) == "*" {
 			arr := reflect.ValueOf(data)
-			fmt.Println(arr)
 			slice := reflect.MakeSlice(arr.Type(), 0, arr.Len())
 
 			// check if value is a slice or array; the length should then match

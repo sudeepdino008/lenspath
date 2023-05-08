@@ -39,3 +39,12 @@ NOTE: it works well with maps and arrays. Setting on structs is problematic as r
 - [ ] document and give examples for various features
 - [ ] test error scenarios (proper error types must be returned)
 - [ ] add ci for running unit tests
+
+
+
+## Problem
+
+if there are several "*" in the lenspath, when doing a get, the value you get would be nested array.
+traversing these might be challenging. Maybe lenspath can provide a recursive call itself, which can 
+unwrap the value and provide interface to get each leaf value sequentially. 
+The problem would then be that "SET" also needs to be nested similarly to make this work.

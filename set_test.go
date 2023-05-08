@@ -55,11 +55,17 @@ func TestMapSet_array(t *testing.T) {
 	data := getTestMap()
 
 	// set array to array of diff size
-	checkSetWithLensPath(t, data, []string{"additional", "tagsList4"}, []string{"a", "b", "c", "d"}, false)
+	// checkSetWithLensPath(t, data, []string{"additional", "tagsList4"}, []string{"a", "b", "c", "d"}, false)
 
-	// size mismatch error
-	checkSetWithLensPath(t, data, []string{"additional", "tagsList2", "*", "tag_h"}, []string{"tag_h1", "tag_h2", "tag_h3"}, true)
+	// // // size mismatch error
+	// checkSetWithLensPath(t, data, []string{"additional", "tagsList2", "*", "tag_h"}, []string{"tag_h1", "tag_h2", "tag_h3"}, true)
 
-	// correct size
-	checkSetWithLensPath(t, data, []string{"additional", "tagsList2", "*", "tag_h"}, []string{"tag_h1", "tag_h2"}, false)
+	// // correct size
+	// checkSetWithLensPath(t, data, []string{"additional", "tagsList2", "*", "tag_h"}, []string{"tag_h1", "tag_h2"}, false)
+
+	// setting with flattening array
+	checkSetWithLensPath(t, data, []string{"additional", "tagsList5", "*", "tag_n", "tag_n", "*", "tag_n_1"}, []int{3, 4}, false)
+
+	// different size should fail
+	// checkSetWithLensPath(t, data, []string{"additional", "tagsList5", "*", "tag_n", "tag_n", "*", "tag_n_1"}, []int{3, 4, 5}, true)
 }

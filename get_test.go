@@ -76,6 +76,9 @@ func TestMapGet(t *testing.T) {
 	checkGetWithLensPath(t, data, []string{"additional", "tagsList2", "*", "tag_n", "tag_n_2"}, []string{"2-string", "2-string"}, false, false, true)
 
 	checkGetWithLensPath(t, data, []string{"additional", "tagsList2", "*", "tag_n", "tag_n_3"}, []any{3.0, "3.0-string"}, false, false, true)
+
+	// the leaves of the tree should be reported in a flattened array
+	checkGetWithLensPath(t, data, []string{"additional", "tagsList5", "*", "tag_n", "tag_n", "*", "tag_n_1"}, []int{1, 3}, false, false, true)
 }
 
 func getTestMap() map[string]any {
@@ -96,6 +99,10 @@ func getTestMap() map[string]any {
 			"tagsList2": []map[string]any{
 				{"tag_h": "medium", "tag_n": map[string]any{"tag_n_1": 1, "tag_n_2": "2-string", "tag_n_3": 3.0}},
 				{"tag_w": "heavy", "tag_h": "tall", "tag_n": map[string]any{"tag_n_2": "2-string", "tag_n_3": "3.0-string"}},
+			},
+			"tagsList5": []map[string]any{
+				{"tag_h": "medium", "tag_n": map[string]any{"tag_n": []map[string]any{{"tag_n_1": 1, "tag_n_2": "2-string", "tag_n_3": 3.0}}}},
+				{"tag_w": "heavy", "tag_h": "tall", "tag_n": map[string]any{"tag_n": []map[string]any{{"tag_n_1": 3, "tag_n_2": "2-string", "tag_n_3": 3.0}}}},
 			},
 			"tagsList3": "hello world",
 			"tagsList4": []string{"hello", "world", "hw"},
