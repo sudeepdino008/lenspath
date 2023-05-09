@@ -1,7 +1,5 @@
 package lenspath
 
-// import "testing"
-
 // func TestMapSet_toplevel(t *testing.T) {
 // 	data := map[string]string{
 // 		"name":   "chacha",

@@ -7,7 +7,7 @@ import (
 
 type Lens = string
 
-type LeafCallback = func(any, error) any // called when a leaf (of the lenspath) is reached; return value is set to the leaf (in case of setter)
+type LeafCallback = func(any) any // called when a leaf (of the lenspath) is reached; return value is set to the leaf (in case of setter)
 
 type Lenspath struct {
 	lens         []Lens
@@ -34,16 +34,21 @@ func Create(lens []Lens) (*Lenspath, error) {
 	return &Lenspath{lens, lastArrPos, assumeNil}, nil
 }
 
-func (lp *Lenspath) Getter(data any, callback LeafCallback) {
-	lp.recurse(data, 0, &TraversalDetails{callback: callback, settable: false})
+func (lp *Lenspath) Getter(data any, callback LeafCallback) error {
+	_, err := lp.recurse(data, 0, &TraversalDetails{callback: callback, settable: false})
+	return err
 }
 
-func (lp *Lenspath) recurse(data any, view int, details *TraversalDetails) {
+func (lp *Lenspath) Setter(data any, callback LeafCallback) error {
+	_, err := lp.recurse(data, 0, &TraversalDetails{callback: callback, settable: true})
+	return err
+}
+
+func (lp *Lenspath) recurse(data any, view int, details *TraversalDetails) (any, error) {
 	if view == lp.len() {
-		details.callback(data, nil)
-		return
+		return details.callback(data), nil
 	} else if data == nil {
-		return
+		return nil, nil
 	}
 
 	kind := reflect.TypeOf(data).Kind()
@@ -56,16 +61,14 @@ func (lp *Lenspath) recurse(data any, view int, details *TraversalDetails) {
 		if lp.path(view) == "*" {
 			lp.traverseSlice(data, view, details)
 		} else {
-			details.callback(nil, NewInvalidLensPathErr(view, ArrayExpectedErr))
+			return nil, NewInvalidLensPathErr(view, ArrayExpectedErr)
 		}
 
 	case reflect.Struct:
 		nestv := reflect.ValueOf(data).FieldByName(lp.path(view))
 		if !nestv.IsValid() || nestv.IsZero() {
 			if lp.atLeaf(view) {
-				details.callback(nil, nil)
-			} else {
-				return
+				details.callback(nil)
 			}
 		} else {
 			lp.recurse(nestv.Interface(), view+1, details)
@@ -75,8 +78,10 @@ func (lp *Lenspath) recurse(data any, view int, details *TraversalDetails) {
 		lp.recurse(reflect.ValueOf(data).Elem().Interface(), view, details)
 
 	default:
-		details.callback(nil, fmt.Errorf("unhandled case: %T", data))
+		return nil, fmt.Errorf("unhandled case: %T", data)
 	}
+
+	return nil, nil
 
 }
 
@@ -96,19 +101,31 @@ func (lp *Lenspath) traverseSlice(value any, view int, details *TraversalDetails
 	}
 }
 
-func (lp *Lenspath) traverseMap(value any, view int, details *TraversalDetails) {
+func (lp *Lenspath) traverseMap(value any, view int, details *TraversalDetails) (any, error) {
 	key := reflect.ValueOf((lp.lens[view]))
 	keyv := reflect.ValueOf(value).MapIndex(key)
+	var val any
+	var err error
 
 	if !keyv.IsValid() || keyv.IsZero() {
-		if view < lp.len()-1 {
-			return
+		if !lp.atLeaf(view) {
+			return nil, nil
 		}
 
-		details.callback(nil, nil)
+		val = details.callback(nil)
 	} else {
-		lp.recurse(keyv.Interface(), view+1, details)
+		val, err = lp.recurse(keyv.Interface(), view+1, details)
 	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	if details.settable && lp.atLeaf(view) {
+		reflect.ValueOf(value).SetMapIndex(key, reflect.ValueOf(val))
+	}
+
+	return nil, nil
 }
 
 func (lp *Lenspath) len() int {

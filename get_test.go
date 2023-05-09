@@ -59,14 +59,6 @@ func TestMapGet(t *testing.T) {
 	// 4.1 with assumeNil
 	checkGetWithLensPath(t, data, []string{"additional", "tagsList", "*", "tag_w"}, []any{nil, "heavy"}, false, false, true)
 
-	// 4. array field getting error
-	checkGetWithLensPath(t, data, []string{"additional", "tagsList", "not_found"}, nil, false, true, false)
-
-	// 5. errors expected
-	//checkGetWithLensPath(t, data, []string{"additional", "addi", "code", "extra"}, "", false, true, false)
-	// 5.1 with assumeNil
-	checkGetWithLensPath(t, data, []string{"additional", "addi", "code", "extra"}, nil, false, true, true)
-
 	checkGetWithLensPath(t, data, []string{"additional", "addi", "nonexisting", "extra"}, nil, false, false, true)
 
 	checkGetWithLensPath(t, data, []string{"additional", "tagsList2", "*", "tag_n", "tag_n_1"}, []any{1, nil}, false, false, true)

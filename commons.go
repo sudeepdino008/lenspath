@@ -12,6 +12,10 @@ import (
 // 		return
 // 	}
 
+// 	lp.Setter(structure, func(value any, err error) any {
+// 		return expectedValue
+// 	})
+
 // 	_, err = lp.Set(structure, expectedValue)
 // 	if err != nil && !setFail {
 // 		t.Errorf("set: Expected no error, got %v", err)
@@ -61,14 +65,9 @@ func checkGetWithLensPath(t *testing.T, structure any, lens []string, expectedVa
 		}
 	}
 
-	var exec_err error
 	index := 0
 
-	lp.Getter(structure, func(value any, err error) any {
-		if err != nil {
-			exec_err = err
-		}
-
+	exec_err := lp.Getter(structure, func(value any) any {
 		if !containsArr {
 			comparev(t, value, expectedValue)
 		} else {
