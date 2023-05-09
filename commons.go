@@ -5,40 +5,66 @@ import (
 	"testing"
 )
 
-// func checkSetWithLensPath(t *testing.T, structure any, lens []string, expectedValue any, setFail bool) {
-// 	lp, err := Create(lens)
-// 	if err != nil {
-// 		t.Errorf("create: Expected no error, got %v", err)
-// 		return
-// 	}
+func checkSetWithLensPath(t *testing.T, structure any, lens []string, expectedValue any, setFail bool) {
+	lp, err := Create(lens)
+	if err != nil {
+		t.Fatalf("create: Expected no error, got %v", err)
+		return
+	}
 
-// 	lp.Setter(structure, func(value any, err error) any {
-// 		return expectedValue
-// 	})
+	containsArr := false
+	for _, lensv := range lens {
+		if lensv == "*" {
+			containsArr = true
+			break
+		}
+	}
+	index := 0
 
-// 	_, err = lp.Set(structure, expectedValue)
-// 	if err != nil && !setFail {
-// 		t.Errorf("set: Expected no error, got %v", err)
-// 		return
-// 	} else if err == nil && setFail {
-// 		t.Errorf("set: Expected error, got %v", err)
-// 		return
-// 	} else if err != nil && setFail {
-// 		// success
-// 		return
-// 	}
+	err = lp.Setter(structure, func(value any) any {
+		if containsArr {
+			if index >= len(expectedValue.([]any)) {
+				t.Fatalf("set: expectedValue array length mismatch")
+				return nil
+			}
+			defer func() { index++ }()
+			return expectedValue.([]any)[index]
+		}
 
-// 	new_value, err := lp.Get(structure)
-// 	if err != nil {
-// 		t.Errorf("og_get: Expected no error, got %v", err)
-// 		return
-// 	}
+		return expectedValue
+	})
 
-// 	if !reflect.DeepEqual(new_value, expectedValue) {
-// 		t.Errorf("compare: Expected %v, got %v", expectedValue, new_value)
-// 		return
-// 	}
-// }
+	if err != nil && !setFail {
+		t.Errorf("set: Expected no error, got %v", err)
+		return
+	} else if err == nil && setFail {
+		t.Errorf("set: Expected error, got %v", err)
+		return
+	}
+
+	if containsArr && index != len(expectedValue.([]any)) {
+		t.Fatalf("set: expectedValue array length mismatch")
+		return
+	}
+
+	index = 0
+
+	err = lp.Getter(structure, func(value any) any {
+		if !containsArr {
+			comparev(t, value, expectedValue)
+		} else {
+			comparev(t, value, expectedValue.([]any)[index])
+			index++
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		t.Errorf("og_get: Expected no error, got %v", err)
+		return
+	}
+}
 
 func checkGetWithLensPath(t *testing.T, structure any, lens []string, expectedValue any, createFail bool, getFail bool, assumeNil bool) {
 	lp, err := Create(lens)
@@ -64,7 +90,6 @@ func checkGetWithLensPath(t *testing.T, structure any, lens []string, expectedVa
 			break
 		}
 	}
-
 	index := 0
 
 	exec_err := lp.Getter(structure, func(value any) any {
