@@ -1,6 +1,6 @@
 # lenspath
 
-`lenspath` is a Golang package for traversing and updating nested data structures, such as maps, slices, structs and arrays. It uses the functional concept of lenses to compose functions that manipulate specific parts of these structures while leaving the rest unchanged. With Lenspath, you can create lenses that focus on nested fields, specific indices of a slice or array, or a range of indices, and combine them to create more complex lenses. The package provides an API for using and combining lenses, making it a useful tool for working with complex, nested data.
+`lenspath` is a Golang package for traversing and updating nested data structures, such as maps, slices, ~~structs~~ and arrays. It uses the functional concept of lenses to compose functions that manipulate specific parts of these structures while leaving the rest unchanged. With Lenspath, you can create lenses that focus on nested fields, specific indices of a slice or array, or a range of indices, and combine them to create more complex lenses. The package provides an API for using and combining lenses, making it a useful tool for working with complex, nested data.
 
 
 ```golang
