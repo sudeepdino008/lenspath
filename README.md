@@ -15,14 +15,16 @@ data := map[string]any{
 				"code":     "334532",
 				"landmark": "near the forest entry",
 			},
-        }
-}
+		},
+	}
 
-codeLp = Lenspath(["additional", "addi", "code"])
-fmt.Println(housePath.Get(data));    // "334532"
+codePath, _ := Create([]string{"additional", "addi", "code"})
+value, _ := codePath.Get(data)
+fmt.Println(value) // "334532"
 
-codeLp.Set(data, "5A-1001");
-fmt.Println(housePath.Get(data));    // "5A-1001"
+codePath.Set(data, "5A-1001")
+value, _ = codePath.Get(data)
+fmt.Println(value) // "5A-1001"
 ```
 
 

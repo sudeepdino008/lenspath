@@ -19,7 +19,7 @@ const (
 	ArrayExpectedErr         InvalidLensPathErrType = "expected array (*)"
 	LensPathStoppedErr                              = "could not navigate further, end of structure reached"
 	CannotSetFieldErr                               = "cannot set field"
-	PathContainsArrErr                              = "path contains *; use GetList() instead"
+	PathContainsArrErr                              = "path contains *; use Getter/Setter() instead"
 	PathDoesntContainsArrErr                        = "path does not contain *; use Get() instead"
 )
 

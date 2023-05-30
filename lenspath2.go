@@ -34,8 +34,30 @@ func Create(lens []Lens) (*Lenspath, error) {
 	return &Lenspath{lens, lastArrPos, assumeNil}, nil
 }
 
+func (lp *Lenspath) Get(data any) (any, error) {
+	if lp.isArrBased() {
+		return nil, NewInvalidLensPathErr(-1, PathContainsArrErr)
+	}
+	var rdata any
+	_, err := lp.recurse(data, 0, &TraversalDetails{callback: func(data any) any {
+		rdata = data
+		return nil
+	}, settable: false})
+	return rdata, err
+}
+
 func (lp *Lenspath) Getter(data any, callback LeafCallback) error {
 	_, err := lp.recurse(data, 0, &TraversalDetails{callback: callback, settable: false})
+	return err
+}
+
+func (lp *Lenspath) Set(data any, value any) error {
+	if lp.isArrBased() {
+		return NewInvalidLensPathErr(-1, PathContainsArrErr)
+	}
+	_, err := lp.recurse(data, 0, &TraversalDetails{callback: func(data any) any {
+		return value
+	}, settable: true})
 	return err
 }
 
@@ -138,4 +160,13 @@ func (lp *Lenspath) path(view int) string {
 
 func (lp *Lenspath) atLeaf(view int) bool {
 	return view >= lp.len()-1
+}
+
+func (lp *Lenspath) isArrBased() bool {
+	for _, lensv := range lp.lens {
+		if lensv == "*" {
+			return true
+		}
+	}
+	return false
 }
