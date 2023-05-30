@@ -13,9 +13,11 @@ func checkSetWithLensPath(t *testing.T, structure any, lens []string, expectedVa
 	}
 
 	containsArr := false
+	var expectedArr reflect.Value
 	for _, lensv := range lens {
 		if lensv == "*" {
 			containsArr = true
+			expectedArr = reflect.ValueOf(expectedValue)
 			break
 		}
 	}
@@ -23,12 +25,12 @@ func checkSetWithLensPath(t *testing.T, structure any, lens []string, expectedVa
 
 	err = lp.Setter(structure, func(value any) any {
 		if containsArr {
-			if index >= len(expectedValue.([]any)) {
+			if index >= expectedArr.Len() {
 				t.Fatalf("set: expectedValue array length mismatch")
 				return nil
 			}
 			defer func() { index++ }()
-			return expectedValue.([]any)[index]
+			return expectedArr.Index(index).Interface()
 		}
 
 		return expectedValue
@@ -42,18 +44,13 @@ func checkSetWithLensPath(t *testing.T, structure any, lens []string, expectedVa
 		return
 	}
 
-	if containsArr && index != len(expectedValue.([]any)) {
-		t.Fatalf("set: expectedValue array length mismatch")
-		return
-	}
-
 	index = 0
 
 	err = lp.Getter(structure, func(value any) any {
 		if !containsArr {
 			comparev(t, value, expectedValue)
 		} else {
-			comparev(t, value, expectedValue.([]any)[index])
+			comparev(t, value, expectedArr.Index(index).Interface())
 			index++
 		}
 
@@ -84,9 +81,11 @@ func checkGetWithLensPath(t *testing.T, structure any, lens []string, expectedVa
 	lp.WithOptions(WithAssumeNil(assumeNil))
 
 	containsArr := false
+	var expectedArr reflect.Value
 	for _, lensv := range lens {
 		if lensv == "*" {
 			containsArr = true
+			expectedArr = reflect.ValueOf(expectedValue)
 			break
 		}
 	}
@@ -96,7 +95,7 @@ func checkGetWithLensPath(t *testing.T, structure any, lens []string, expectedVa
 		if !containsArr {
 			comparev(t, value, expectedValue)
 		} else {
-			comparev(t, value, expectedValue.([]any)[index])
+			comparev(t, value, expectedArr.Index(index).Interface())
 			index++
 		}
 
@@ -107,7 +106,7 @@ func checkGetWithLensPath(t *testing.T, structure any, lens []string, expectedVa
 		t.Fatalf("Expected no error, got %v", exec_err)
 	} else if exec_err == nil && getFail {
 		t.Fatalf("Expected error, got %v", exec_err)
-	} else if containsArr && index != len(expectedValue.([]any)) {
+	} else if containsArr && index != expectedArr.Len() {
 		t.Fatalf("expected array size mismatch")
 	}
 
@@ -125,7 +124,7 @@ func comparev(t *testing.T, value any, expectedValue any) {
 	}
 	kind := reflect.TypeOf(value).Kind()
 	switch {
-	case kind == reflect.Slice || kind == reflect.Array:
+	case kind == reflect.Slice || kind == reflect.Array || kind == reflect.Map:
 		if !reflect.DeepEqual(value, expectedValue) {
 			t.Fatalf("Expected %v, got %v", expectedValue, value)
 		}
