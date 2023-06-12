@@ -1,3 +1,3 @@
-module github.com/sudeepdino008/lenspath
+module github.com/covalenthq/lenspath
 
 go 1.19
