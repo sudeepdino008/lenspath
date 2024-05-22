@@ -29,3 +29,20 @@ fmt.Println(value) // "5A-1001"
 
 
 NOTE: it works well with maps and arrays. Setting on structs is problematic as reflection required fields to be "settable".  
+
+
+## the callback API
+The golang lenspath also provides a callback API for get and set:
+
+The following will assign index value to the leaf nodes (`data`):
+```go
+dataLens, _ := Create([]string{"replicaEvent", "*", "data"})
+
+index = 0
+err := dataLens.Setter(map, func(value any) any {
+    index=index+1
+    return index    ## nth leaf on the same level
+})
+```
+
+This API allows for more complex editing/retrieval of leaf node values (the simpler Get/Set are infact expressed in terms of Setter/Getter)
